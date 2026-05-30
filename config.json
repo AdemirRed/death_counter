@@ -1,0 +1,25 @@
+{
+  "port": 8765,
+  "game_name": "Meu Jogo",
+  "detection_mode": "template",
+  "ocr_keywords": [
+    "YOU DIED",
+    "GAME OVER",
+    "DEATH",
+    "WASTED",
+    "VOCE MORREU"
+  ],
+  "ocr_region": null,
+  "template_threshold": 0.75,
+  "detection_interval": 1,
+  "cooldown_after_death": 4,
+  "tesseract_path": "",
+  "overlay_style": "dark",
+  "counter_label": "MORTES",
+  "show_session_time": true,
+  "hotkey_add": "f1",
+  "hotkey_remove": "f2",
+  "hotkey_reset": "backspace",
+  "hotkeys_enabled": true,
+  "hotkey_capture": ""
+}

@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Death Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--sf:#16161a;--s2:#1e1e24;--bd:rgba(255,255,255,.08);
+  --red:#e84040;--rdim:rgba(232,64,64,.15);--rg:rgba(232,64,64,.3);
+  --green:#3ecf4e;--blue:#4e9cf5;--yellow:#f5c84e;
+  --txt:#e8e8f0;--mt:#6b6b80;--r:10px;
+}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+.app{display:grid;grid-template-columns:200px 1fr;grid-template-rows:54px 1fr;min-height:100vh}
+header{grid-column:1/-1;background:var(--sf);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 18px;gap:10px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--red)}
+.topinfo{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mt);margin-left:12px}
+.topright{font-size:11px;color:var(--mt);margin-left:auto;white-space:nowrap}
+nav{background:var(--sf);border-right:1px solid var(--bd);padding:14px 10px;display:flex;flex-direction:column;gap:3px}
+.nb{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:none;
+  background:transparent;color:var(--mt);font-size:13px;cursor:pointer;transition:all .13s;text-align:left;width:100%}
+.nb:hover{background:var(--s2);color:var(--txt)}
+.nb.on{background:var(--rdim);color:var(--red);font-weight:600}
+main{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px}
+.ct{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--mt);margin-bottom:12px}
+/* hero */
+.hero{background:linear-gradient(135deg,#1a0808,#120909,#0d0d0f);border:1px solid rgba(232,64,64,.3);
+  border-radius:var(--r);padding:28px 24px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(232,64,64,.1),transparent 65%);pointer-events:none}
+.hn{font-family:'Share Tech Mono',monospace;font-size:96px;line-height:1;color:#fff;
+  text-shadow:0 0 28px rgba(232,64,64,.55)}
+.hn.pop{animation:pop .22s cubic-bezier(.36,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.14)}100%{transform:scale(1)}}
+.hl{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:4px;color:var(--red);margin-bottom:2px}
+.ht{font-size:10px;color:var(--mt);margin-top:5px;font-family:'Share Tech Mono',monospace}
+.ctrls{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;position:relative;z-index:1}
+.btn{border:none;border-radius:8px;cursor:pointer;font-family:'Bebas Neue',sans-serif;
+  font-size:16px;letter-spacing:1px;transition:all .13s;display:flex;align-items:center;gap:6px;padding:12px 20px}
+.btn:active{transform:scale(.94)}
+.bplus{background:var(--red);color:#fff;font-size:22px;padding:14px 36px;box-shadow:0 4px 18px var(--rg)}
+.bplus:hover{background:#ff5050}
+.bminus{background:var(--s2);color:var(--mt);border:1px solid var(--bd)}
+.bminus:hover{background:#252530;color:var(--txt)}
+.breset{background:transparent;color:var(--mt);border:1px solid var(--bd);font-size:14px}
+.breset:hover{color:var(--txt);border-color:rgba(255,255,255,.2)}
+/* status bar */
+.sbar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--s2);border-radius:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mt);flex-shrink:0;transition:all .3s}
+.dot.run{background:var(--green);box-shadow:0 0 7px var(--green);animation:pd 2s infinite}
+.dot.hit{background:var(--red);box-shadow:0 0 10px var(--red)}
+.dot.warn{background:var(--yellow);box-shadow:0 0 7px var(--yellow)}
+@keyframes pd{0%,100%{box-shadow:0 0 6px var(--green)}50%{box-shadow:0 0 14px var(--green)}}
+.stxt{font-size:12px;color:var(--mt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* small buttons */
+.bs{padding:7px 13px;font-size:12px;border-radius:6px;border:1px solid var(--bd);
+  background:var(--s2);color:var(--txt);cursor:pointer;transition:all .13s;white-space:nowrap}
+.bs:hover{background:#252530}
+.bs:active{transform:scale(.95)}
+.bs.go{background:rgba(62,207,78,.12);border-color:var(--green);color:var(--green)}
+.bs.go:hover{background:rgba(62,207,78,.2)}
+.bs.danger{color:var(--red)}
+.bs.danger:hover{background:var(--rdim);border-color:var(--red)}
+.bs.blue{color:var(--blue);border-color:rgba(78,156,245,.35)}
+.bs.blue:hover{background:rgba(78,156,245,.1)}
+.bs.yellow{color:var(--yellow);border-color:rgba(245,200,78,.35)}
+.bs.yellow:hover{background:rgba(245,200,78,.1)}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:6px;border:1px solid transparent;background:transparent;
+  color:var(--mt);font-size:12px;cursor:pointer;transition:all .13s}
+.tab:hover{color:var(--txt);background:var(--s2)}
+.tab.on{background:var(--s2);border-color:var(--bd);color:var(--txt)}
+/* form */
+.fr{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.fl{font-size:11px;color:var(--mt);letter-spacing:.3px}
+.fi,.fs{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--txt);
+  padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .13s;width:100%}
+.fi:focus,.fs:focus{border-color:rgba(232,64,64,.4)}
+.fs option{background:var(--sf)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.savebtn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 22px;
+  font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;margin-top:6px}
+.savebtn:hover{background:#ff5050}
+.savebtn:active{transform:scale(.96)}
+/* hotkey */
+.hk-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hkb{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--yellow);
+  padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:13px;min-width:130px;text-align:center;
+  cursor:pointer;transition:all .13s;user-select:none}
+.hkb:hover{border-color:rgba(245,200,78,.4)}
+.hkb.rec{border-color:var(--red);color:var(--red);animation:blink .5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+/* templates */
+.upzone{border:2px dashed var(--bd);border-radius:var(--r);padding:22px;text-align:center;
+  color:var(--mt);cursor:pointer;transition:all .2s;display:block}
+.upzone:hover{border-color:var(--red);color:var(--txt);background:var(--rdim)}
+.upzone input{display:none}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px}
+.tpl-item{display:flex;align-items:center;justify-content:space-between;background:var(--s2);
+  border-radius:6px;padding:8px 12px;font-size:12px;font-family:'Share Tech Mono',monospace}
+/* obs */
+.obsurl{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--blue);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;word-break:break-all;margin-top:6px}
+/* debug log */
+.dbg{background:#080c08;border:1px solid rgba(62,207,78,.2);border-radius:8px;
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:#4aff6a;
+  padding:10px;max-height:160px;overflow-y:auto;margin-top:10px}
+.dbg .err{color:#ff6060}
+.dbg .warn{color:var(--yellow)}
+/* lib tags */
+.lib-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;
+  font-size:11px;border:1px solid var(--bd);margin:3px}
+.lib-tag.ok{background:rgba(62,207,78,.1);border-color:var(--green);color:var(--green)}
+.lib-tag.fail{background:rgba(232,64,64,.1);border-color:var(--red);color:var(--red)}
+/* toast */
+.toast{position:fixed;bottom:18px;right:18px;padding:9px 16px;border-radius:8px;font-size:13px;
+  opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;z-index:2000;
+  background:#1e2a1e;border:1px solid var(--green);color:var(--green)}
+.toast.show{opacity:1;transform:translateY(0)}
+/* pages */
+.pg{display:none}.pg.on{display:contents}
+/* offline banner */
+#offBanner{display:none;background:rgba(232,64,64,.15);border:1px solid var(--red);
+  border-radius:8px;padding:10px 14px;font-size:12px;color:#ff8080;margin-bottom:2px}
+/* pending badge */
+#pendingBadge{display:none;background:rgba(245,200,78,.12);border:1px solid var(--yellow);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:var(--yellow);cursor:pointer;
+  display:none;align-items:center;gap:10px;margin-bottom:2px}
+#pendingBadge:hover{background:rgba(245,200,78,.2)}
+
+/* ── MODAL SELETOR DE REGIÃO ──────────────────────────────────── */
+#regionModal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1500;
+  flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;
+}
+#regionModal.open{display:flex}
+#regionInstr{
+  color:var(--yellow);font-size:13px;font-family:'Share Tech Mono',monospace;
+  text-align:center;line-height:1.5;max-width:600px;
+}
+#regionCanvas{
+  cursor:crosshair;border:2px solid var(--red);border-radius:4px;
+  touch-action:none;display:block;
+  max-width:calc(100vw - 24px);max-height:calc(100vh - 140px);
+}
+#regionBtns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#regionInfo{font-size:11px;color:var(--mt);font-family:'Share Tech Mono',monospace}
+
+/* ── mobile ──────────────────────────────────────────────────── */
+@media(max-width:700px){
+  .app{grid-template-columns:1fr;grid-template-rows:50px auto 1fr}
+  header{padding:0 12px}
+  .topright{display:none}
+  nav{
+    flex-direction:row;overflow-x:auto;padding:5px 8px;
+    border-right:none;border-bottom:1px solid var(--bd);
+    gap:4px;grid-row:2;scrollbar-width:none;
+  }
+  nav::-webkit-scrollbar{display:none}
+  .nb{min-width:max-content;padding:7px 10px;font-size:12px;gap:5px;flex-shrink:0}
+  main{padding:10px;gap:10px;grid-row:3}
+  .hn{font-size:72px}
+  .btn{font-size:14px;padding:11px 16px}
+  .bplus{padding:13px 28px;font-size:20px}
+  .g2{grid-template-columns:1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .card{padding:12px}
+  .obsurl{flex-direction:column;align-items:flex-start}
+  .ctrls{gap:8px}
+  .hk-row .hkb{min-width:100px}
+  .sbar{flex-wrap:wrap}
+  #regionBtns{gap:8px}
+}
+@media(max-width:400px){
+  .hn{font-size:54px}
+  .bplus{padding:12px 22px;font-size:18px}
+  .g4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">💀 Death Counter</div>
+  <div class="topinfo">
+    <div class="dot" id="topDot"></div>
+    <span id="topTxt">Conectando...</span>
+  </div>
+  <div class="topright">por <strong style="color:var(--txt)">Ademir de Oliveira</strong></div>
+</header>
+
+<nav>
+  <button class="nb on" onclick="pg('contador')"  id="pn-contador" >💀 Contador</button>
+  <button class="nb"    onclick="pg('deteccao')"  id="pn-deteccao" >👁️ Detecção</button>
+  <button class="nb"    onclick="pg('hotkeys')"   id="pn-hotkeys"  >⌨️ Hotkeys</button>
+  <button class="nb"    onclick="pg('templates')" id="pn-templates">🖼️ Templates</button>
+  <button class="nb"    onclick="pg('obs')"       id="pn-obs"      >📺 OBS</button>
+  <button class="nb"    onclick="pg('libs')"      id="pn-libs"     >⚙️ Libs / Debug</button>
+</nav>
+
+<main>
+
+<!-- ══ CONTADOR ══════════════════════════════════════ -->
+<div class="pg on" id="pg-contador">
+
+  <div id="offBanner">
+    ⚠️ Servidor offline — abra um terminal e rode: <strong>python death_counter.py</strong><br>
+    Depois abra <strong>http://localhost:8765</strong> no navegador (não abra o HTML direto).
+  </div>
+
+  <div id="pendingBadge" onclick="openRegionSelector(true)">
+    <span style="font-size:18px">📸</span>
+    <span>
+      <strong>Screenshot capturado!</strong> Clique aqui para selecionar a região da tela de morte e salvar como template.
+    </span>
+    <button class="bs danger" onclick="event.stopPropagation();clearPending()" style="margin-left:auto">✕</button>
+  </div>
+
+  <div class="hero">
+    <div class="hl" id="hLabel">MORTES</div>
+    <div class="hn" id="hNum">—</div>
+    <div class="ht" id="hTime">Sessão: 00:00:00</div>
+    <div class="ctrls">
+      <button class="btn bminus" onclick="apiDec()">➖ DESFAZER</button>
+      <button class="btn bplus"  onclick="apiInc()">☠️ +1 MORTE</button>
+      <button class="btn breset" onclick="apiReset()">🔄 RESET</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Detecção automática</div>
+    <div class="sbar">
+      <div class="dot" id="detDot"></div>
+      <div class="stxt" id="detTxt">Parado</div>
+      <button class="bs go"     id="btnStart" onclick="apiStartDet()">▶ Iniciar</button>
+      <button class="bs danger" id="btnStop"  onclick="apiStopDet()">⏹ Parar</button>
+    </div>
+    <div id="detErr" style="margin-top:8px;font-size:11px;color:#ff8080;display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="bs yellow" onclick="openRegionSelector(false)">📸 Capturar região da tela como template</button>
+      <button class="bs"        onclick="quickToggleDet()" id="btnToggle">▶ Ativar Detecção</button>
+      <button class="bs"        onclick="pg('templates')" style="color:var(--mt)">🖼 Ver templates</button>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--mt)">Definir valor:</span>
+    <input type="number" id="setVal" class="fi" style="max-width:100px" min="0" placeholder="0">
+    <button class="bs" onclick="apiSet()">Definir</button>
+  </div>
+
+  <!-- ── ACESSO PELO CELULAR ── -->
+  <div class="card">
+    <div class="ct">📱 Acesso pelo Celular</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:8px">
+      Conecte o celular na mesma Wi-Fi e abra a URL abaixo no navegador.
+    </div>
+    <div class="obsurl" id="netUrl" style="cursor:pointer" onclick="copiarNet()">
+      <span id="netUrlTxt">Carregando...</span>
+      <button class="bs blue" onclick="event.stopPropagation();copiarNet()">📋 Copiar</button>
+    </div>
+  </div>
+
+  <!-- ── APOIAR O DEV ── -->
+  <div class="card" style="text-align:center">
+    <div class="ct">☕ Apoie o Dev</div>
+    <div style="font-size:13px;color:var(--txt);margin-bottom:10px;line-height:1.7">
+      Criado por <strong style="color:var(--red)">Ademir de Oliveira</strong><br>
+      <span style="font-size:11px;color:var(--mt)">Se o Death Counter te ajudou, um cafezinho ajuda muito! ☕</span>
+    </div>
+    <img src="/pix.png" alt="QR Code PIX"
+         style="max-width:180px;border-radius:8px;border:1px solid var(--bd);margin-bottom:12px;display:block;margin-left:auto;margin-right:auto"
+         onerror="this.style.display='none'">
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 14px;
+                font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--blue);
+                display:flex;align-items:center;justify-content:space-between;gap:8px;
+                word-break:break-all;max-width:420px;margin:0 auto;flex-wrap:wrap">
+      <span id="pixKey">ademir1de1oliveira+nb@gmail.com</span>
+      <button class="bs blue" onclick="copiarPix()">📋 Copiar PIX</button>
+    </div>
+    <div style="font-size:10px;color:var(--mt);margin-top:6px">Chave PIX — e-mail</div>
+  </div>
+
+</div>
+
+<!-- ══ DETECÇÃO ══════════════════════════════════════ -->
+<div class="pg" id="pg-deteccao">
+  <div class="card">
+    <div class="ct">Modo</div>
+    <div class="tabs">
+      <button class="tab" id="t-none"     onclick="setMode('none')">Desativado</button>
+      <button class="tab" id="t-ocr"      onclick="setMode('ocr')">OCR (texto)</button>
+      <button class="tab" id="t-template" onclick="setMode('template')">Template (imagem)</button>
+    </div>
+
+    <div id="p-none" style="font-size:12px;color:var(--mt);padding:6px 0">
+      Use os botões manuais ou hotkeys para registrar mortes.
+    </div>
+
+    <div id="p-ocr" style="display:none">
+      <div class="fr">
+        <div class="fl">Palavras-chave (vírgula)</div>
+        <input class="fi" id="ocrKw" placeholder="YOU DIED, GAME OVER, WASTED, VOCE MORREU">
+      </div>
+      <div class="fr">
+        <div class="fl">Região de captura (X Y Largura Altura) — vazio = tela toda</div>
+        <div class="g4">
+          <input class="fi" id="ocrX" type="number" placeholder="X">
+          <input class="fi" id="ocrY" type="number" placeholder="Y">
+          <input class="fi" id="ocrW" type="number" placeholder="W">
+          <input class="fi" id="ocrH" type="number" placeholder="H">
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fl">Caminho Tesseract (se não estiver no PATH)</div>
+        <input class="fi" id="tessPath" placeholder="C:\Program Files\Tesseract-OCR\tesseract.exe">
+      </div>
+      <div style="font-size:11px;color:var(--mt)">
+        💡 <a href="https://github.com/UB-Mannheim/tesseract/wiki" target="_blank" style="color:var(--blue)">Baixar Tesseract</a>
+      </div>
+    </div>
+
+    <div id="p-template" style="display:none">
+      <div class="fr">
+        <div class="fl">Confiança mínima (0.0–1.0) — quanto maior, mais preciso e menos falsos positivos</div>
+        <input class="fi" id="tplThresh" type="number" min="0" max="1" step="0.05" style="max-width:110px" placeholder="0.80">
+      </div>
+      <div style="font-size:11px;color:var(--mt);line-height:1.7;background:var(--s2);border-radius:8px;padding:10px 12px">
+        💡 <strong style="color:var(--txt)">Recomendado: 0.80</strong> — ajuste para cima se houver falsos positivos (0.85, 0.90…)<br>
+        Adicione templates na aba <strong style="color:var(--txt)">Templates</strong> capturando a tela de morte.
+      </div>
+    </div>
+
+    <div class="g2" style="margin-top:14px">
+      <div class="fr" style="margin-bottom:0">
+        <div class="fl">Intervalo de checagem (seg)</div>
+        <input class="fi" id="detInt" type="number" min="0.3" step="0.1" placeholder="1.0">
+      </div>
+      <div class="fr" style="margin-bottom:0">
+        <div class="fl">Cooldown após morte (seg)</div>
+        <input class="fi" id="cooldown" type="number" min="1" step="0.5" placeholder="4">
+      </div>
+    </div>
+    <button class="savebtn" onclick="saveDetCfg()">💾 Salvar</button>
+  </div>
+</div>
+
+<!-- ══ HOTKEYS ════════════════════════════════════════ -->
+<div class="pg" id="pg-hotkeys">
+  <div class="card">
+    <div class="ct">Teclas de Atalho Globais</div>
+    <p style="font-size:12px;color:var(--mt);margin-bottom:14px;line-height:1.7">
+      Funcionam mesmo com o jogo em tela cheia.<br>
+      Clique na caixa amarela e pressione a tecla para capturá-la.
+    </p>
+
+    <div class="fr">
+      <div class="fl">☠️ Adicionar morte</div>
+      <div class="hk-row">
+        <div class="hkb" id="hkAdd" onclick="recHk('hkAdd','hotkey_add')">F1</div>
+        <button class="bs danger" onclick="clearHk('hkAdd','hotkey_add')">✕ Limpar</button>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fl">➖ Remover morte</div>
+      <div class="hk-row">
+        <div class="hkb" id="hkRem" onclick="recHk('hkRem','hotkey_remove')">F2</div>
+        <button class="bs danger" onclick="clearHk('hkRem','hotkey_remove')">✕ Limpar</button>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fl">🔄 Resetar contador</div>
+      <div class="hk-row">
+        <div class="hkb" id="hkRst" onclick="recHk('hkRst','hotkey_reset')">—</div>
+        <button class="bs danger" onclick="clearHk('hkRst','hotkey_reset')">✕ Limpar</button>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fl">📸 Capturar tela para template (pressione durante o jogo, depois selecione a região)</div>
+      <div class="hk-row">
+        <div class="hkb" id="hkCap" onclick="recHk('hkCap','hotkey_capture')">—</div>
+        <button class="bs danger" onclick="clearHk('hkCap','hotkey_capture')">✕ Limpar</button>
+      </div>
+    </div>
+
+    <div class="fr" style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="hkOn" style="accent-color:var(--red)"> Hotkeys ativadas
+      </label>
+    </div>
+
+    <button class="savebtn" onclick="saveHotkeys()">💾 Salvar &amp; Aplicar</button>
+    <div id="hkStatus" style="margin-top:8px;font-size:12px;color:var(--mt)"></div>
+
+    <div style="margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--mt);line-height:1.8">
+      <strong style="color:var(--txt)">Exemplos:</strong>
+      <code style="color:var(--yellow)">f1 &nbsp; ctrl+f1 &nbsp; alt+f2 &nbsp; ctrl+shift+k</code><br>
+      ⚠️ No Windows, rode o <code style="color:var(--yellow)">death_counter.py</code> como <strong style="color:var(--txt)">Administrador</strong> para as hotkeys funcionarem no jogo.
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEMPLATES ═════════════════════════════════════ -->
+<div class="pg" id="pg-templates">
+  <div class="card">
+    <div class="ct">Templates de Morte</div>
+    <p style="font-size:12px;color:var(--mt);margin-bottom:14px;line-height:1.7">
+      Capture a tela de morte do jogo e arraste para selecionar a região exata.<br>
+      O sistema compara cada frame capturado com esses templates para detectar mortes.
+    </p>
+
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--mt);line-height:1.8">
+      <strong style="color:var(--txt)">Como usar:</strong><br>
+      1. Configure a hotkey 📸 na aba <strong style="color:var(--txt)">Hotkeys</strong> (ex: F10)<br>
+      2. Durante o jogo, na tela de morte, pressione a hotkey<br>
+      3. Volte aqui — aparecerá uma notificação para selecionar a região<br>
+      <em style="color:#555">Ou use o botão abaixo para capturar agora:</em>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="bs yellow" onclick="openRegionSelector(false)">📸 Capturar tela e selecionar região</button>
+      <button class="bs go"     id="btnUsePending" onclick="openRegionSelector(true)" style="display:none">✅ Usar captura pendente</button>
+    </div>
+
+    <label class="upzone">
+      <input type="file" id="tplFile" accept="image/png,image/jpeg" multiple onchange="uploadTpl(event)">
+      <div style="font-size:28px;margin-bottom:6px">📂</div>
+      <div style="font-size:13px">Clique ou arraste imagens PNG/JPG</div>
+      <div style="font-size:11px;color:var(--mt);margin-top:4px">Enviar template direto (sem precisar selecionar região)</div>
+    </label>
+
+    <div id="tplList" style="margin-top:12px">
+      <div style="font-size:12px;color:var(--mt);text-align:center;padding:12px">Nenhum template ainda</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OBS ═══════════════════════════════════════════ -->
+<div class="pg" id="pg-obs">
+  <div class="card">
+    <div class="ct">OBS Browser Source</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:12px">
+      OBS → <strong style="color:var(--txt)">+ Fonte → Browser</strong> → cole a URL
+    </div>
+    <div class="g2">
+      <div class="fr">
+        <div class="fl">Estilo</div>
+        <select class="fs" id="oStyle" onchange="updUrl()">
+          <option value="dark">Dark</option>
+          <option value="neon">Neon</option>
+          <option value="blood">Blood</option>
+          <option value="light">Light</option>
+          <option value="minimal">Minimal</option>
+        </select>
+      </div>
+      <div class="fr">
+        <div class="fl">Tamanho</div>
+        <select class="fs" id="oSize" onchange="updUrl()">
+          <option value="">Normal</option>
+          <option value="small">Pequeno</option>
+          <option value="large">Grande</option>
+        </select>
+      </div>
+    </div>
+    <div class="fl">URL:</div>
+    <div class="obsurl">
+      <span id="obsUrl"></span>
+      <button class="bs" onclick="copyUrl()">📋 Copiar</button>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--mt);line-height:1.7">
+      Largura: <strong style="color:var(--txt)">300</strong> &nbsp;|&nbsp; Altura: <strong style="color:var(--txt)">180</strong><br>
+      ✅ Atualizar quando cena ficar ativa &nbsp;|&nbsp; Background já transparente
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Overlay</div>
+    <div class="g2">
+      <div class="fr"><div class="fl">Nome do Jogo</div><input class="fi" id="gameName" placeholder="Elden Ring"></div>
+      <div class="fr"><div class="fl">Label</div><input class="fi" id="cLabel" placeholder="MORTES"></div>
+    </div>
+    <div class="fr">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="showTime" style="accent-color:var(--red)"> Mostrar tempo de sessão
+      </label>
+    </div>
+    <button class="savebtn" onclick="saveOverlay()">💾 Salvar</button>
+  </div>
+</div>
+
+<!-- ══ LIBS / DEBUG ══════════════════════════════════ -->
+<div class="pg" id="pg-libs">
+  <div class="card">
+    <div class="ct">Status das Libs</div>
+    <div id="libsDiv" style="margin-bottom:14px">...</div>
+    <div style="background:var(--s2);border-radius:8px;padding:12px;font-size:12px;color:var(--mt);line-height:2;overflow-x:auto">
+      <strong style="color:var(--txt)">Instalar tudo:</strong><br>
+      <code style="color:var(--yellow)">python -m pip install flask flask-cors mss pillow numpy opencv-python pytesseract keyboard</code>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Log de Debug</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="bs" onclick="testPing()">🏓 Testar conexão</button>
+      <button class="bs" onclick="testInc()">☠️ Testar +1</button>
+      <button class="bs danger" onclick="dbgLines=[];renderDbg()">🗑 Limpar</button>
+    </div>
+    <div class="dbg" id="dbg">Aguardando ações...</div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ══ MODAL: Seletor de Região ══════════════════════════════════ -->
+<div id="regionModal">
+  <div id="regionInstr">
+    🖱️ <strong>Clique e arraste</strong> para selecionar a área da tela de morte<br>
+    <span id="regionSubInstr" style="font-size:11px;color:var(--mt)">A região selecionada será salva como template de detecção</span>
+  </div>
+  <canvas id="regionCanvas"></canvas>
+  <div id="regionInfo">—</div>
+  <div id="regionBtns">
+    <button class="bs danger" onclick="closeRegionModal()">✕ Cancelar</button>
+    <button class="bs" onclick="clearRegionSelection()" style="color:var(--mt)">↺ Limpar seleção</button>
+    <button class="bs go" onclick="saveRegion()">💾 Salvar como Template</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '';
+let cfg = {}, sessionStart = null, detMode = 'none', cfgLoaded = false;
+let dbgLines = [];
+
+// ─── Web Audio ───────────────────────────────────────────────────────
+const _ac = new (window.AudioContext || window.webkitAudioContext)();
+function _tone(freq, dur, type='sine', vol=0.28, delay=0) {
+  try {
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.connect(g); g.connect(_ac.destination);
+    o.type = type; o.frequency.value = freq;
+    const t = _ac.currentTime + delay;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.01);
+  } catch(e){}
+}
+const SFX = {
+  add:    ()=>{ _tone(880,.10,'sine',.30); _tone(1100,.14,'sine',.18,.10); },
+  remove: ()=>{ _tone(440,.15,'sine',.28); _tone(330,.10,'sine',.15,.13); },
+  reset:  ()=>{ _tone(330,.08,'sine',.2); _tone(440,.08,'sine',.2,.10); _tone(550,.14,'sine',.25,.20); },
+  detect: ()=>{ _tone(660,.07,'square',.18); _tone(880,.07,'square',.18,.09); _tone(1100,.15,'square',.22,.18); },
+  start:  ()=>{ _tone(550,.10,'sine',.22); _tone(770,.14,'sine',.22,.12); },
+  stop:   ()=>{ _tone(440,.10,'sine',.22); _tone(300,.16,'sine',.18,.11); },
+  copy:   ()=>  _tone(1200,.09,'sine',.15),
+  error:  ()=>  _tone(220,.30,'sawtooth',.12),
+  set:    ()=>  _tone(660,.12,'sine',.20),
+  capture:()=>{ _tone(1100,.06,'sine',.25); _tone(880,.10,'sine',.20,.08); },
+};
+
+// ─── Debug log ──────────────────────────────────────────────────────
+function dbg(msg, type='') {
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  dbgLines.push({ts, msg, type});
+  if(dbgLines.length > 80) dbgLines.shift();
+  renderDbg();
+}
+function renderDbg() {
+  const el = document.getElementById('dbg');
+  if(!el) return;
+  el.innerHTML = dbgLines.map(l =>
+    `<div class="${l.type}">[${l.ts}] ${l.msg}</div>`
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? '#2a1010' : '#1e2a1e';
+  t.style.borderColor = err ? 'var(--red)' : 'var(--green)';
+  t.style.color = err ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── Navegação ──────────────────────────────────────────────────────
+function pg(name) {
+  document.querySelectorAll('.pg').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(e => e.classList.remove('on'));
+  document.getElementById('pg-' + name).classList.add('on');
+  document.getElementById('pn-' + name).classList.add('on');
+  if(name === 'templates') loadTpls();
+  updUrl();
+}
+
+// ─── Fetch helper ────────────────────────────────────────────────────
+async function api(path, method='GET', body=null, isForm=false) {
+  const url = BASE + path;
+  dbg(`${method} ${path}${body&&!isForm?' '+JSON.stringify(body):''}`);
+  try {
+    const opts = { method };
+    if(isForm) {
+      opts.body = body;
+    } else if(body) {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = JSON.stringify(body);
+    }
+    const r = await fetch(url, opts);
+    const text = await r.text();
+    let j;
+    try { j = JSON.parse(text); } catch { j = { _raw: text }; }
+    dbg(`→ ${r.status} ${JSON.stringify(j).slice(0,120)}`);
+    return j;
+  } catch(e) {
+    dbg(`ERRO FETCH: ${e.message}`, 'err');
+    return null;
+  }
+}
+
+// ─── Testes de debug ─────────────────────────────────────────────────
+async function testPing() {
+  pg('libs');
+  const r = await api('/ping');
+  r?.ok ? toast('Ping OK! Servidor respondendo.') : toast('Servidor não respondeu!', true);
+}
+async function testInc() {
+  pg('libs');
+  const r = await api('/deaths/increment', 'POST');
+  r?.ok ? toast('+1 OK! Mortes: '+r.deaths) : toast('Falhou — veja o log', true);
+}
+
+// ─── Botões principais ───────────────────────────────────────────────
+async function apiInc() {
+  SFX.add();
+  const d = await api('/deaths/increment', 'POST');
+  if(d?.ok) { bump(d.deaths); toast('+1 morte! ☠️'); }
+  else { SFX.error(); toast('Servidor offline!', true); showOffBanner(true); }
+}
+async function apiDec() {
+  SFX.remove();
+  const d = await api('/deaths/decrement', 'POST');
+  if(d?.ok) { bump(d.deaths); toast('Morte removida.'); }
+  else { SFX.error(); toast('Servidor offline!', true); showOffBanner(true); }
+}
+async function apiReset() {
+  if(!confirm('Zerar contador para 0?')) return;
+  SFX.reset();
+  const d = await api('/deaths/reset', 'POST');
+  if(d?.ok) { bump(0); toast('Zerado!'); }
+  else { SFX.error(); toast('Servidor offline!', true); showOffBanner(true); }
+}
+async function apiSet() {
+  const v = parseInt(document.getElementById('setVal').value);
+  if(isNaN(v) || v < 0) { SFX.error(); toast('Valor inválido', true); return; }
+  SFX.set();
+  const d = await api('/deaths/set', 'POST', { value: v });
+  if(d?.ok) { bump(d.deaths); toast('Definido: ' + d.deaths); }
+  else { SFX.error(); toast('Servidor offline!', true); }
+}
+async function apiStartDet() {
+  const r = await api('/detection/start', 'POST');
+  if(r) { SFX.start(); toast(r.started ? 'Detecção iniciada! ▶' : 'Já estava rodando'); }
+  else { SFX.error(); toast('Servidor offline!', true); }
+}
+async function apiStopDet() {
+  const r = await api('/detection/stop', 'POST');
+  if(r) { SFX.stop(); toast('Detecção parada. ⏹'); }
+  else { SFX.error(); toast('Servidor offline!', true); }
+}
+async function quickToggleDet() {
+  const running = document.getElementById('detDot').classList.contains('run');
+  if(running) await apiStopDet(); else await apiStartDet();
+}
+
+// ─── URL de rede para celular ────────────────────────────────────────
+let _netUrl = '';
+async function loadNetInfo() {
+  const r = await api('/network/info');
+  if(r?.url) {
+    _netUrl = r.url;
+    document.getElementById('netUrlTxt').textContent = r.url;
+  }
+}
+function copiarNet() {
+  if(!_netUrl) return;
+  SFX.copy();
+  navigator.clipboard.writeText(_netUrl)
+    .then(() => toast('URL copiada! Abra no celular 📱'))
+    .catch(() => prompt('Copie a URL:', _netUrl));
+}
+
+function bump(n) {
+  const el = document.getElementById('hNum');
+  el.textContent = n;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+function showOffBanner(show) {
+  document.getElementById('offBanner').style.display = show ? 'block' : 'none';
+}
+
+// ─── Pending screenshot badge ─────────────────────────────────────────
+function showPendingBadge(show) {
+  const b = document.getElementById('pendingBadge');
+  b.style.display = show ? 'flex' : 'none';
+  const btn = document.getElementById('btnUsePending');
+  if(btn) btn.style.display = show ? 'inline-flex' : 'none';
+}
+async function clearPending() {
+  await api('/screenshot/clear_pending', 'POST');
+  showPendingBadge(false);
+  toast('Captura descartada.');
+}
+
+// ─── Seletor de Região ───────────────────────────────────────────────
+let _rImg = null, _rCanvas = null, _rCtx = null;
+let _rStart = null, _rEnd = null, _rDrawing = false, _rScale = 1;
+
+async function openRegionSelector(usePending) {
+  // Esconde o modal, mostra loading
+  toast('Carregando screenshot...');
+
+  let url;
+  if(usePending) {
+    // verifica se há captura pendente
+    const resp = await fetch(BASE + '/screenshot/pending?t=' + Date.now());
+    if(!resp.ok) {
+      toast('Nenhuma captura pendente. Use o botão para capturar agora.', true);
+      usePending = false;
+    } else {
+      url = BASE + '/screenshot/pending?t=' + Date.now();
+    }
+  }
+  if(!usePending) {
+    // Captura tela agora
+    const testR = await fetch(BASE + '/screenshot/preview?t=' + Date.now());
+    if(!testR.ok) {
+      toast('Erro ao capturar tela (mss/pillow instalados?)', true);
+      return;
+    }
+    url = BASE + '/screenshot/preview?t=' + Date.now();
+  }
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    _rImg = img;
+    _rCanvas = document.getElementById('regionCanvas');
+    _rCtx = _rCanvas.getContext('2d');
+
+    // Ajustar canvas ao tamanho da imagem
+    _rCanvas.width  = img.width;
+    _rCanvas.height = img.height;
+
+    // Scale para caber na tela
+    const maxW = window.innerWidth  - 32;
+    const maxH = window.innerHeight - 160;
+    _rScale = Math.min(maxW / img.width, maxH / img.height, 1);
+    _rCanvas.style.width  = Math.round(img.width  * _rScale) + 'px';
+    _rCanvas.style.height = Math.round(img.height * _rScale) + 'px';
+
+    _rStart = null; _rEnd = null; _rDrawing = false;
+    _rCtx.drawImage(img, 0, 0);
+    document.getElementById('regionInfo').textContent = 'Nenhuma área selecionada';
+    document.getElementById('regionModal').classList.add('open');
+  };
+  img.onerror = () => toast('Erro ao carregar screenshot', true);
+  img.src = url;
+}
+
+function _rPtFromEvent(e) {
+  const rect = _rCanvas.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: Math.max(0, Math.min(_rCanvas.width,  (cx - rect.left)  / _rScale)),
+    y: Math.max(0, Math.min(_rCanvas.height, (cy - rect.top)   / _rScale)),
+  };
+}
+
+function _rRedraw() {
+  if(!_rImg || !_rCtx) return;
+  _rCtx.drawImage(_rImg, 0, 0);
+  if(!_rStart || !_rEnd) return;
+
+  const x1 = Math.min(_rStart.x, _rEnd.x);
+  const y1 = Math.min(_rStart.y, _rEnd.y);
+  const x2 = Math.max(_rStart.x, _rEnd.x);
+  const y2 = Math.max(_rStart.y, _rEnd.y);
+  const w = x2 - x1, h = y2 - y1;
+
+  // Dim fora da seleção
+  _rCtx.fillStyle = 'rgba(0,0,0,0.52)';
+  _rCtx.fillRect(0, 0, _rCanvas.width, y1);
+  _rCtx.fillRect(0, y2, _rCanvas.width, _rCanvas.height - y2);
+  _rCtx.fillRect(0, y1, x1, h);
+  _rCtx.fillRect(x2, y1, _rCanvas.width - x2, h);
+
+  // Borda vermelha
+  _rCtx.strokeStyle = '#e84040';
+  _rCtx.lineWidth = Math.max(2, 3 / _rScale);
+  _rCtx.strokeRect(x1, y1, w, h);
+
+  // Info
+  document.getElementById('regionInfo').textContent =
+    `Região: ${Math.round(x1)},${Math.round(y1)} — ${Math.round(w)}×${Math.round(h)}px`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const c = document.getElementById('regionCanvas');
+  // Mouse
+  c.addEventListener('mousedown',  e=>{ _rStart=_rPtFromEvent(e); _rEnd=null; _rDrawing=true; });
+  c.addEventListener('mousemove',  e=>{ if(!_rDrawing) return; _rEnd=_rPtFromEvent(e); _rRedraw(); });
+  c.addEventListener('mouseup',    ()=>{ _rDrawing=false; });
+  // Touch
+  c.addEventListener('touchstart', e=>{ e.preventDefault(); _rStart=_rPtFromEvent(e); _rEnd=null; _rDrawing=true; },{passive:false});
+  c.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!_rDrawing) return; _rEnd=_rPtFromEvent(e); _rRedraw(); },{passive:false});
+  c.addEventListener('touchend',   e=>{ e.preventDefault(); _rDrawing=false; },{passive:false});
+});
+
+function clearRegionSelection() {
+  _rStart = null; _rEnd = null;
+  if(_rImg && _rCtx) _rCtx.drawImage(_rImg, 0, 0);
+  document.getElementById('regionInfo').textContent = 'Nenhuma área selecionada';
+}
+
+async function saveRegion() {
+  if(!_rStart || !_rEnd) { toast('Selecione uma área primeiro', true); return; }
+  const x = Math.round(Math.min(_rStart.x, _rEnd.x));
+  const y = Math.round(Math.min(_rStart.y, _rEnd.y));
+  const w = Math.round(Math.abs(_rEnd.x - _rStart.x));
+  const h = Math.round(Math.abs(_rEnd.y - _rStart.y));
+  if(w < 10 || h < 10) { toast('Área muito pequena — arraste uma região maior', true); return; }
+
+  // Crop no canvas temporário
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  tmp.getContext('2d').drawImage(_rImg, x, y, w, h, 0, 0, w, h);
+
+  tmp.toBlob(async (blob) => {
+    if(!blob) { toast('Erro ao gerar imagem', true); return; }
+    const name = 'template_' + Date.now() + '.png';
+    const form = new FormData();
+    form.append('file', blob, name);
+    toast('Salvando template...');
+    const r = await api('/templates/upload', 'POST', form, true);
+    if(r?.ok) {
+      SFX.capture();
+      toast('Template salvo: ' + r.saved);
+      closeRegionModal();
+      // Limpa pending se havia uma captura pendente
+      await api('/screenshot/clear_pending', 'POST');
+      showPendingBadge(false);
+      loadTpls();
+    } else {
+      toast(r?.error || 'Erro ao salvar template', true);
+    }
+  }, 'image/png');
+}
+
+function closeRegionModal() {
+  document.getElementById('regionModal').classList.remove('open');
+  _rImg = null; _rStart = null; _rEnd = null;
+}
+
+// Fechar modal com Esc
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeRegionModal();
+  if(_rec && !e.target.classList.contains('hkb')) {
+    // não capturar Esc como hotkey
+    if(e.key !== 'Escape') return;
+    stopRec(true);
+  }
+});
+
+// ─── Detecção config ─────────────────────────────────────────────────
+function setMode(m) {
+  detMode = m;
+  ['none','ocr','template'].forEach(x => {
+    document.getElementById('t-'+x).classList.toggle('on', x===m);
+    document.getElementById('p-'+x).style.display = x===m ? 'block' : 'none';
+  });
+}
+
+async function saveDetCfg() {
+  const c = { detection_mode: detMode };
+  if(detMode === 'ocr') {
+    c.ocr_keywords = document.getElementById('ocrKw').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const x=parseInt(document.getElementById('ocrX').value);
+    const y=parseInt(document.getElementById('ocrY').value);
+    const w=parseInt(document.getElementById('ocrW').value);
+    const h=parseInt(document.getElementById('ocrH').value);
+    c.ocr_region = (x&&y&&w&&h) ? [x,y,w,h] : null;
+    c.tesseract_path = document.getElementById('tessPath').value.trim();
+  }
+  if(detMode === 'template') {
+    c.template_threshold = parseFloat(document.getElementById('tplThresh').value) || 0.80;
+  }
+  c.detection_interval   = parseFloat(document.getElementById('detInt').value) || 1.0;
+  c.cooldown_after_death = parseFloat(document.getElementById('cooldown').value) || 4.0;
+  const r = await api('/config', 'POST', c);
+  r?.ok ? toast('Salvo!') : toast('Erro ao salvar', true);
+}
+
+// ─── Hotkey recorder ──────────────────────────────────────────────────
+let _rec = null;
+const _hkVals = {};
+
+function recHk(elId, cfgKey) {
+  if(_rec) stopRec(true);
+  _rec = { elId, cfgKey };
+  const el = document.getElementById(elId);
+  el.textContent = 'Pressione...';
+  el.classList.add('rec');
+  window.addEventListener('keydown', onKey, { once: true, capture: true });
+}
+
+function onKey(e) {
+  e.preventDefault(); e.stopPropagation();
+  if(!_rec) return;
+  if(e.key === 'Escape') { stopRec(true); return; }
+  const parts = [];
+  if(e.ctrlKey)  parts.push('ctrl');
+  if(e.altKey)   parts.push('alt');
+  if(e.shiftKey) parts.push('shift');
+  const k = e.key.toLowerCase();
+  if(!['control','alt','shift','meta'].includes(k)) parts.push(k);
+  const combo = parts.join('+');
+  const el = document.getElementById(_rec.elId);
+  el.textContent = combo || '—';
+  el.classList.remove('rec');
+  _hkVals[_rec.cfgKey] = combo;
+  _rec = null;
+}
+
+function stopRec(restore) {
+  if(!_rec) return;
+  window.removeEventListener('keydown', onKey, { capture: true });
+  document.getElementById(_rec.elId).classList.remove('rec');
+  if(restore) document.getElementById(_rec.elId).textContent = _hkVals[_rec.cfgKey] || cfg[_rec.cfgKey] || '—';
+  _rec = null;
+}
+
+function clearHk(elId, cfgKey) {
+  document.getElementById(elId).textContent = '—';
+  _hkVals[cfgKey] = '';
+}
+
+async function saveHotkeys() {
+  const get = (elId, cfgKey) => {
+    const v = _hkVals[cfgKey] !== undefined ? _hkVals[cfgKey] : (document.getElementById(elId).textContent.trim());
+    return v === '—' ? '' : v;
+  };
+  const c = {
+    hotkey_add:      get('hkAdd', 'hotkey_add'),
+    hotkey_remove:   get('hkRem', 'hotkey_remove'),
+    hotkey_reset:    get('hkRst', 'hotkey_reset'),
+    hotkey_capture:  get('hkCap', 'hotkey_capture'),
+    hotkeys_enabled: document.getElementById('hkOn').checked,
+  };
+  const r = await api('/config', 'POST', c);
+  if(!r?.ok) { toast('Erro ao salvar', true); return; }
+  const r2 = await api('/hotkeys/reload', 'POST');
+  const reg = r2?.registered;
+  document.getElementById('hkStatus').textContent =
+    reg ? '✅ Hotkeys registradas!' : '⚠️ Não registradas — keyboard instalado? Rodando como admin?';
+  toast(reg ? 'Hotkeys ativas!' : 'Salvo, mas hotkeys não registradas', !reg);
+}
+
+// ─── Templates ───────────────────────────────────────────────────────
+async function loadTpls() {
+  const data = await api('/templates');
+  const el = document.getElementById('tplList');
+  if(!data || !data.templates?.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--mt);text-align:center;padding:12px">Nenhum template ainda</div>';
+    return;
+  }
+  el.innerHTML = '<div class="tpl-grid">' + data.templates.map(t => `
+    <div class="tpl-item">
+      <span>🖼 ${t}</span>
+      <button class="bs danger" onclick="delTpl('${t}')">🗑</button>
+    </div>`).join('') + '</div>';
+}
+
+async function uploadTpl(evt) {
+  const files = Array.from(evt.target.files);
+  if(!files.length) return;
+  let ok=0, fail=0;
+  for(const f of files) {
+    const form = new FormData();
+    form.append('file', f);
+    const r = await api('/templates/upload', 'POST', form, true);
+    r?.ok ? ok++ : fail++;
+  }
+  toast(`${ok} enviado(s)${fail?' | '+fail+' erro(s)':''}`, fail>0);
+  evt.target.value = '';
+  loadTpls();
+}
+
+async function delTpl(name) {
+  if(!confirm('Remover "' + name + '"?')) return;
+  const r = await api('/templates/' + encodeURIComponent(name), 'DELETE');
+  r?.ok ? (toast('Removido!'), loadTpls()) : toast('Erro', true);
+}
+
+// ─── OBS ─────────────────────────────────────────────────────────────
+function updUrl() {
+  const style = document.getElementById('oStyle')?.value || 'dark';
+  const size  = document.getElementById('oSize')?.value  || '';
+  const base  = location.origin + '/obs_overlay.html';
+  const p = [];
+  if(style && style !== 'dark') p.push('style=' + style);
+  if(size) p.push('size=' + size);
+  const el = document.getElementById('obsUrl');
+  if(el) el.textContent = base + (p.length ? '?' + p.join('&') : '');
+}
+function copyUrl() {
+  const url = document.getElementById('obsUrl').textContent;
+  SFX.copy();
+  navigator.clipboard.writeText(url).then(() => toast('URL copiada!')).catch(() => prompt('Copie:', url));
+}
+function copiarPix() {
+  const key = document.getElementById('pixKey').textContent.trim();
+  SFX.copy();
+  navigator.clipboard.writeText(key)
+    .then(() => toast('Chave PIX copiada! Obrigado pelo cafezinho ☕'))
+    .catch(() => prompt('Copie a chave PIX:', key));
+}
+async function saveOverlay() {
+  const c = {
+    game_name:         document.getElementById('gameName').value,
+    counter_label:     document.getElementById('cLabel').value || 'MORTES',
+    show_session_time: document.getElementById('showTime').checked,
+    overlay_style:     document.getElementById('oStyle').value || 'dark',
+  };
+  const r = await api('/config', 'POST', c);
+  r?.ok ? toast('Salvo!') : toast('Erro', true);
+}
+
+// ─── Libs ────────────────────────────────────────────────────────────
+function renderLibs(l) {
+  const map = {
+    mss:      'mss — Captura de tela',
+    pillow:   'pillow+numpy — Processamento de imagem',
+    cv2:      'opencv-python — Template matching',
+    tess:     'pytesseract — OCR (texto na tela)',
+    keyboard: 'keyboard — Hotkeys globais',
+  };
+  document.getElementById('libsDiv').innerHTML =
+    Object.entries(map).map(([k, label]) =>
+      `<span class="lib-tag ${l[k]?'ok':'fail'}">${l[k]?'✅':'❌'} ${label}</span>`
+    ).join('');
+}
+
+// ─── Timer ───────────────────────────────────────────────────────────
+function fmtT(iso) {
+  if(!iso) return '00:00:00';
+  const d = Math.floor((Date.now() - new Date(iso)) / 1000);
+  return [Math.floor(d/3600), Math.floor((d%3600)/60), d%60].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
+// ─── Polling ─────────────────────────────────────────────────────────
+let lastDeaths = -1, pollFails = 0, lastDetSt = '', lastPending = false;
+
+async function poll() {
+  const data = await api('/state');
+  if(!data) {
+    pollFails++;
+    if(pollFails >= 3) {
+      document.getElementById('topDot').className = 'dot warn';
+      document.getElementById('topTxt').textContent = 'Servidor offline';
+      showOffBanner(true);
+    }
+    return;
+  }
+  pollFails = 0;
+  showOffBanner(false);
+
+  cfg = data.config || {};
+  if(data.session_start) sessionStart = data.session_start;
+  const deaths = data.deaths ?? 0;
+
+  if(deaths !== lastDeaths) {
+    document.getElementById('hNum').textContent = deaths;
+    lastDeaths = deaths;
+  }
+  document.getElementById('hLabel').textContent = cfg.counter_label || 'MORTES';
+
+  const st = data.detection_status || 'parado';
+  if(st === 'detectado' && lastDetSt !== 'detectado') SFX.detect();
+  lastDetSt = st;
+
+  const stMap = {
+    parado:   { cls:'',    txt:'Detecção parada' },
+    rodando:  { cls:'run', txt:'Detecção ativa...' },
+    detectado:{ cls:'hit', txt:'☠️ Morte detectada!' },
+  };
+  const info = stMap[st] || stMap.parado;
+  document.getElementById('detDot').className = 'dot ' + info.cls;
+  document.getElementById('topDot').className = 'dot ' + info.cls;
+  document.getElementById('detTxt').textContent = info.txt;
+  document.getElementById('topTxt').textContent = `${cfg.game_name||'Jogo'} — ${deaths} morte(s)`;
+
+  const tb = document.getElementById('btnToggle');
+  if(tb) tb.textContent = (st==='rodando'||st==='detectado') ? '⏸ Pausar Detecção' : '▶ Ativar Detecção';
+
+  const errEl = document.getElementById('detErr');
+  if(data.last_error) {
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ ' + data.last_error;
+  } else { errEl.style.display = 'none'; }
+
+  if(data.libs) renderLibs(data.libs);
+
+  // Badge de captura pendente
+  const hasPending = !!data.has_pending_screenshot;
+  if(hasPending !== lastPending) {
+    lastPending = hasPending;
+    showPendingBadge(hasPending);
+    if(hasPending) {
+      SFX.capture();
+      toast('📸 Screenshot capturado! Vá em Templates para selecionar a região.');
+    }
+  }
+
+  if(!cfgLoaded) {
+    cfgLoaded = true;
+    document.getElementById('gameName').value    = cfg.game_name||'';
+    document.getElementById('cLabel').value      = cfg.counter_label||'MORTES';
+    document.getElementById('showTime').checked  = !!cfg.show_session_time;
+    document.getElementById('detInt').value      = cfg.detection_interval||1.0;
+    document.getElementById('cooldown').value    = cfg.cooldown_after_death||4;
+    document.getElementById('ocrKw').value       = (cfg.ocr_keywords||[]).join(', ');
+    document.getElementById('tessPath').value    = cfg.tesseract_path||'';
+    document.getElementById('tplThresh').value   = cfg.template_threshold||0.80;
+    document.getElementById('hkOn').checked      = cfg.hotkeys_enabled !== false;
+    document.getElementById('hkAdd').textContent = cfg.hotkey_add||'f1';
+    document.getElementById('hkRem').textContent = cfg.hotkey_remove||'f2';
+    document.getElementById('hkRst').textContent = cfg.hotkey_reset||'—';
+    document.getElementById('hkCap').textContent = cfg.hotkey_capture||'—';
+    if(cfg.overlay_style) document.getElementById('oStyle').value = cfg.overlay_style;
+    setMode(cfg.detection_mode || 'none');
+    updUrl();
+  }
+}
+
+// inicia
+updUrl();
+poll();
+loadNetInfo();
+setInterval(poll, 800);
+setInterval(() => {
+  if(sessionStart) document.getElementById('hTime').textContent = 'Sessão: ' + fmtT(sessionStart);
+}, 1000);
+document.addEventListener('click', e => {
+  if(_rec && !e.target.classList.contains('hkb')) stopRec(true);
+});
+</script>
+</body>
+</html>

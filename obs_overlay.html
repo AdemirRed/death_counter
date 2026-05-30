@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Death Counter Overlay</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── Estilos disponíveis ── */
+  :root {
+    --skull: '💀';
+  }
+
+  /* DARK (padrão) */
+  .style-dark .widget {
+    background: rgba(0,0,0,0.82);
+    border: 2px solid rgba(255,60,60,0.7);
+    box-shadow: 0 0 18px rgba(255,30,30,0.35), inset 0 0 30px rgba(0,0,0,0.5);
+    color: #fff;
+  }
+  .style-dark .label { color: #ff4444; }
+  .style-dark .count { color: #ffffff; text-shadow: 0 0 20px rgba(255,80,80,0.8); }
+
+  /* NEON */
+  .style-neon .widget {
+    background: rgba(5,5,20,0.88);
+    border: 2px solid #0ff;
+    box-shadow: 0 0 25px #0ff8, 0 0 50px #0ff3, inset 0 0 20px rgba(0,255,255,0.05);
+    color: #0ff;
+  }
+  .style-neon .label { color: #f0f; text-shadow: 0 0 10px #f0f; }
+  .style-neon .count { color: #0ff; text-shadow: 0 0 30px #0ff; }
+
+  /* LIGHT */
+  .style-light .widget {
+    background: rgba(255,255,255,0.92);
+    border: 2px solid #cc0000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    color: #111;
+  }
+  .style-light .label { color: #cc0000; }
+  .style-light .count { color: #111; }
+
+  /* MINIMAL */
+  .style-minimal .widget {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #fff;
+  }
+  .style-minimal .label { color: rgba(255,255,255,0.7); font-size: 10px; }
+  .style-minimal .count { color: #fff; text-shadow: 2px 2px 8px #000, -1px -1px 0 #000; }
+
+  /* BLOOD */
+  .style-blood .widget {
+    background: rgba(40,0,0,0.90);
+    border: 2px solid #8b0000;
+    box-shadow: 0 0 30px rgba(139,0,0,0.6), inset 0 0 40px rgba(139,0,0,0.15);
+    color: #ff6666;
+  }
+  .style-blood .label { color: #ff2222; text-shadow: 0 0 8px #ff0000; }
+  .style-blood .count { color: #ff4444; text-shadow: 0 0 20px #ff0000, 0 0 40px rgba(255,0,0,0.4); }
+
+  /* ── Widget base ── */
+  .widget {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
+    border-radius: 8px;
+    min-width: 130px;
+    gap: 4px;
+    user-select: none;
+    transition: transform 0.1s ease;
+    position: relative;
+  }
+
+  .skull-icon {
+    font-size: 22px;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin-top: 2px;
+  }
+
+  .count {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 36px;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    min-width: 2ch;
+    text-align: center;
+  }
+
+  .session-time {
+    font-size: 9px;
+    opacity: 0.45;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Animação de morte detectada */
+  @keyframes death-flash {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(1.15); }
+    40%  { transform: scale(0.97); }
+    60%  { transform: scale(1.08); }
+    80%  { transform: scale(0.99); }
+    100% { transform: scale(1); }
+  }
+  @keyframes count-pop {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+  .widget.flash { animation: death-flash 0.5s ease; }
+  .count.pop    { animation: count-pop 0.35s cubic-bezier(.36,1.56,.64,1); }
+</style>
+</head>
+<body>
+
+<div id="wrapper" class="style-dark">
+  <div class="widget" id="widget">
+    <div class="skull-icon">💀</div>
+    <div class="label" id="label">MORTES</div>
+    <div class="count" id="count">0</div>
+    <div class="session-time" id="session-time" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8765';
+  let lastDeaths = -1;
+  let sessionStart = null;
+
+  // Lê parâmetros da URL para personalizar sem mudar o arquivo
+  const params = new URLSearchParams(location.search);
+  const styleParam  = params.get('style');   // dark|neon|light|minimal|blood
+  const posParam    = params.get('pos');     // topLeft|topRight|bottomLeft|bottomRight|center
+  const sizeParam   = params.get('size');    // small|normal|large
+
+  // Aplica posição
+  const positions = {
+    topLeft:     'flex-start flex-start',
+    topRight:    'flex-start flex-end',
+    bottomLeft:  'flex-end flex-start',
+    bottomRight: 'flex-end flex-end',
+    center:      'center center',
+  };
+  if (posParam && positions[posParam]) {
+    const [a, j] = positions[posParam].split(' ');
+    document.body.style.alignItems = a;
+    document.body.style.justifyContent = j;
+  }
+
+  // Aplica tamanho
+  const countEl = document.getElementById('count');
+  if (sizeParam === 'small')  countEl.style.fontSize = '22px';
+  if (sizeParam === 'large')  countEl.style.fontSize = '52px';
+
+  function applyStyle(s) {
+    const w = document.getElementById('wrapper');
+    w.className = `style-${s || 'dark'}`;
+  }
+
+  function animateDeath() {
+    const widget = document.getElementById('widget');
+    const count  = document.getElementById('count');
+    widget.classList.remove('flash');
+    count.classList.remove('pop');
+    void widget.offsetWidth;
+    widget.classList.add('flash');
+    count.classList.add('pop');
+    setTimeout(() => { widget.classList.remove('flash'); count.classList.remove('pop'); }, 600);
+  }
+
+  function formatTime(isoStr) {
+    if (!isoStr) return '';
+    const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(`${API}/state`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const { deaths, session_start, detection_status } = data;
+      const cfg = data.config || {};
+
+      // Aplica estilo (parâmetro URL tem prioridade, depois config)
+      applyStyle(styleParam || cfg.overlay_style || 'dark');
+
+      // Label
+      document.getElementById('label').textContent = cfg.counter_label || 'MORTES';
+
+      // Sessão
+      if (session_start) sessionStart = session_start;
+      const timeEl = document.getElementById('session-time');
+      if (cfg.show_session_time) {
+        timeEl.style.display = 'block';
+        timeEl.textContent = formatTime(sessionStart);
+      } else {
+        timeEl.style.display = 'none';
+      }
+
+      // Conta com animação
+      if (deaths !== lastDeaths) {
+        if (lastDeaths >= 0 && deaths > lastDeaths) animateDeath();
+        document.getElementById('count').textContent = deaths;
+        lastDeaths = deaths;
+      }
+    } catch(e) {
+      // Servidor offline — mantém último valor
+    }
+  }
+
+  poll();
+  setInterval(poll, 500);        // atualiza a cada 500ms
+  setInterval(() => {            // força re-render do timer a cada segundo
+    const timeEl = document.getElementById('session-time');
+    if (timeEl.style.display !== 'none' && sessionStart) {
+      timeEl.textContent = formatTime(sessionStart);
+    }
+  }, 1000);
+</script>
+</body>
+</html>
