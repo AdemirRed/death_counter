@@ -310,7 +310,7 @@ def reset_deaths():
     threading.Thread(target=_snd_reset, daemon=True).start()
 
 # ── screenshot pendente (capturado por hotkey, aguardando seleção de região) ──
-_pending_screenshot: bytes | None = None
+_pending_screenshot = None  # bytes ou None
 
 def capture_and_store_pending():
     global _pending_screenshot
